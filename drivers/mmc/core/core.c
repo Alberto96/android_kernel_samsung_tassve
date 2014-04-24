@@ -1228,7 +1228,7 @@ void mmc_stop_host(struct mmc_host *host)
 
 	if (host->caps & MMC_CAP_DISABLE)
 		cancel_delayed_work(&host->disable);
-	cancel_delayed_work(&host->detect);
+	cancel_delayed_work_sync(&host->detect);
 	mmc_flush_scheduled_work();
 
 	/* clear pm flags now and let card drivers set them as needed */
@@ -1373,6 +1373,7 @@ int mmc_suspend_host(struct mmc_host *host)
 EXPORT_SYMBOL(mmc_suspend_host);
 
 /**
+
  *	mmc_resume_host - resume a previously suspended host
  *	@host: mmc host
  */
