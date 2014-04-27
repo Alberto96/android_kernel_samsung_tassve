@@ -410,7 +410,7 @@ static void pm_dev_err(struct device *dev, pm_message_t state, char *info,
 static void dpm_show_time(ktime_t starttime, pm_message_t state, char *info)
 {
 	ktime_t calltime;
-	u64 usecs64;
+	s64 usecs64;
 	int usecs;
 
 	calltime = ktime_get();
