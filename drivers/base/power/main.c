@@ -93,7 +93,8 @@ void device_pm_unlock(void)
 void device_pm_add(struct device *dev)
 {
 	pr_debug("PM: Adding info for %s:%s\n",
-		 dev->bus ? dev->bus->name : "No Bus", dev_name(dev));
+		 dev->bus ? dev->bus->name : "No Bus",
+		 kobject_name(&dev->kobj));
 	mutex_lock(&dpm_list_mtx);
 	if (dev->parent) {
 		if (dev->parent->power.status >= DPM_SUSPENDING)
@@ -119,7 +120,8 @@ void device_pm_add(struct device *dev)
 void device_pm_remove(struct device *dev)
 {
 	pr_debug("PM: Removing info for %s:%s\n",
-		 dev->bus ? dev->bus->name : "No Bus", dev_name(dev));
+		 dev->bus ? dev->bus->name : "No Bus",
+		 kobject_name(&dev->kobj));
 	complete_all(&dev->power.completion);
 	mutex_lock(&dpm_list_mtx);
 	list_del_init(&dev->power.entry);
@@ -135,8 +137,10 @@ void device_pm_remove(struct device *dev)
 void device_pm_move_before(struct device *deva, struct device *devb)
 {
 	pr_debug("PM: Moving %s:%s before %s:%s\n",
-		 deva->bus ? deva->bus->name : "No Bus", dev_name(deva),
-		 devb->bus ? devb->bus->name : "No Bus", dev_name(devb));
+		 deva->bus ? deva->bus->name : "No Bus",
+		 kobject_name(&deva->kobj),
+		 devb->bus ? devb->bus->name : "No Bus",
+		 kobject_name(&devb->kobj));
 	/* Delete deva from dpm_list and reinsert before devb. */
 	list_move_tail(&deva->power.entry, &devb->power.entry);
 }
@@ -149,8 +153,10 @@ void device_pm_move_before(struct device *deva, struct device *devb)
 void device_pm_move_after(struct device *deva, struct device *devb)
 {
 	pr_debug("PM: Moving %s:%s after %s:%s\n",
-		 deva->bus ? deva->bus->name : "No Bus", dev_name(deva),
-		 devb->bus ? devb->bus->name : "No Bus", dev_name(devb));
+		 deva->bus ? deva->bus->name : "No Bus",
+		 kobject_name(&deva->kobj),
+		 devb->bus ? devb->bus->name : "No Bus",
+		 kobject_name(&devb->kobj));
 	/* Delete deva from dpm_list and reinsert after devb. */
 	list_move(&deva->power.entry, &devb->power.entry);
 }
@@ -162,7 +168,8 @@ void device_pm_move_after(struct device *deva, struct device *devb)
 void device_pm_move_last(struct device *dev)
 {
 	pr_debug("PM: Moving %s:%s to end of list\n",
-		 dev->bus ? dev->bus->name : "No Bus", dev_name(dev));
+		 dev->bus ? dev->bus->name : "No Bus",
+		 kobject_name(&dev->kobj));
 	list_move_tail(&dev->power.entry, &dpm_list);
 }
 
@@ -400,7 +407,7 @@ static void pm_dev_err(struct device *dev, pm_message_t state, char *info,
 			int error)
 {
 	printk(KERN_ERR "PM: Device %s failed to %s%s: error %d\n",
-		dev_name(dev), pm_verb(state.event), info, error);
+		kobject_name(&dev->kobj), pm_verb(state.event), info, error);
 }
 
 static void dpm_show_time(ktime_t starttime, pm_message_t state, char *info)
@@ -1097,7 +1104,7 @@ static int dpm_prepare(pm_message_t state)
 			}
 			printk(KERN_INFO "PM: Device %s not prepared "
 				"for power transition: code %d\n",
-				dev_name(dev), error);
+				kobject_name(&dev->kobj), error);
 			put_device(dev);
 			break;
 		}
