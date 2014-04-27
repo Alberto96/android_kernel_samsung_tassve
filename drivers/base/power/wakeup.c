@@ -28,11 +28,6 @@ static unsigned long events_in_progress;
 
 static DEFINE_SPINLOCK(events_lock);
 
-static void pm_wakeup_timer_fn(unsigned long data);
-
-static DEFINE_TIMER(events_timer, pm_wakeup_timer_fn, 0, 0);
-static unsigned long events_timer_expires;
-
 /*
  * The functions below use the observation that each wakeup event starts a
  * period in which the system should not be suspended.  The moment this period
@@ -108,22 +103,17 @@ void pm_relax(void)
 }
 
 /**
- * pm_wakeup_timer_fn - Delayed finalization of a wakeup event.
+ * pm_wakeup_work_fn - Deferred closing of a wakeup event.
  *
- * Decrease the counter of wakeup events being processed after it was increased
- * by pm_wakeup_event().
+ * Execute pm_relax() for a wakeup event detected in the past and free the
+ * work item object used for queuing up the work.
  */
-static void pm_wakeup_timer_fn(unsigned long data)
+static void pm_wakeup_work_fn(struct work_struct *work)
 {
-	unsigned long flags;
+	struct delayed_work *dwork = to_delayed_work(work);
 
-	spin_lock_irqsave(&events_lock, flags);
-	if (events_timer_expires
-	    && time_before_eq(events_timer_expires, jiffies)) {
-		events_in_progress--;
-		events_timer_expires = 0;
-	}
-	spin_unlock_irqrestore(&events_lock, flags);
+	pm_relax();
+	kfree(dwork);
 }
 
 /**
@@ -133,38 +123,30 @@ static void pm_wakeup_timer_fn(unsigned long data)
  *
  * Notify the PM core of a wakeup event (signaled by @dev) that will take
  * approximately @msec milliseconds to be processed by the kernel.  Increment
- * the counter of registered wakeup events and (if @msec is nonzero) set up
- * the wakeup events timer to execute pm_wakeup_timer_fn() in future (if the
- * timer has not been set up already, increment the counter of wakeup events
- * being processed).  If @dev is not NULL, the counter of wakeup events related
- * to @dev is incremented too.
+ * the counter of wakeup events being processed and queue up a work item
+ * that will execute pm_relax() for the event after @msec milliseconds.  If @dev
+ * is not NULL, the counter of wakeup events related to @dev is incremented too.
  *
  * It is safe to call this function from interrupt context.
  */
 void pm_wakeup_event(struct device *dev, unsigned int msec)
 {
 	unsigned long flags;
+	struct delayed_work *dwork;
+
+	dwork = msec ? kzalloc(sizeof(*dwork), GFP_ATOMIC) : NULL;
 
 	spin_lock_irqsave(&events_lock, flags);
-	event_count++;
 	if (dev)
 		dev->power.wakeup_count++;
 
-	if (msec) {
-		unsigned long expires;
+	if (dwork) {
+		INIT_DELAYED_WORK(dwork, pm_wakeup_work_fn);
+		schedule_delayed_work(dwork, msecs_to_jiffies(msec));
 
-		expires = jiffies + msecs_to_jiffies(msec);
-		if (!expires)
-			expires = 1;
-
-		if (!events_timer_expires
-		    || time_after(expires, events_timer_expires)) {
-			if (!events_timer_expires)
-				events_in_progress++;
-
-			mod_timer(&events_timer, expires);
-			events_timer_expires = expires;
-		}
+		events_in_progress++;
+	} else {
+		event_count++;
 	}
 	spin_unlock_irqrestore(&events_lock, flags);
 }
