@@ -1,0 +1,16 @@
+ui_print("Flashing Kernel...");
+
+# copying files
+mount("ext4", "EMMC", "/dev/block/stl9", "/system");
+package_extract_file("busybox", "busybox");
+package_extract_file("bmlunlock", "bmlunlock");
+package_extract_file("boot.img", "boot.img");
+package_extract_dir("system", "/system");
+set_perm_recursive(0, 0, 0777, 0777, "/system/lib/modules");
+set_perm(0, 0, 0777, "/system/lib/modules");
+set_perm(0, 0, 0755, "bmlunlock");
+set_perm(0, 0, 0755, "busybox");
+
+# flashing
+run_program("bmlunlock");
+run_program("busybox", "dd", "if=boot.img", "of=/dev/block/bml7");
