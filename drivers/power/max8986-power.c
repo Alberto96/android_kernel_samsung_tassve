@@ -75,7 +75,7 @@ DEFINE_MUTEX(spa_charger_mutex);
 #if defined(CONFIG_BOARD_COOPERVE)
 #define USB_PREENUM_CURR_REQ_VAL MAX8986_CHARGING_CURR_550MA
 #else
-#define USB_PREENUM_CURR_REQ_VAL MAX8986_CHARGING_CURR_450MA
+#define USB_PREENUM_CURR_REQ_VAL MAX8986_CHARGING_CURR_600MA
 #endif
 
 #if defined(CONFIG_BOARD_COOPERVE)
@@ -2315,8 +2315,8 @@ static void max8986_init_charger(struct max8986_power *max8986_power)
 	reg_val |= MBCCV_4_20V;
 	max8986->write_dev(max8986, MAX8986_PM_REG_MBCCTRL3, reg_val);
 
-	/* Set 450mA as charging current bydefault */
-	reg_val = MAX8986_CHARGING_CURR_450MA ;
+	/* Set 600mA as charging current bydefault */
+	reg_val = MAX8986_CHARGING_CURR_600MA ;
 	max8986->write_dev(max8986, MAX8986_PM_REG_MBCCTRL4, reg_val);
 
 	/* Set 60mA as EOC */
