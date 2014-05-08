@@ -69,13 +69,13 @@
 /**********************************************************
  * This is porting values
  **********************************************************/
-#define PHYSICAL_PAGE_SIZE		4096		// 8KB
+#define PHYSICAL_PAGE_SIZE		2048		// 4KB
 #define PHYSICAL_BLOCK_SIZE	PHYSICAL_PAGE_SIZE*64		// 256KB
 #define J4FS_PARTITION_ID		21
 #undef J4FS_USE_XSR							// NO XSR
 // J4FS for moviNAND merged from ROSSI
-#define J4FS_USE_FSR						// FSR
-//#define J4FS_USE_MOVI
+#undef J4FS_USE_FSR						// FSR
+#define J4FS_USE_MOVI
 
 #if defined(J4FS_USE_MOVI)
 #define J4FS_BLOCK_COUNT	20
@@ -95,8 +95,8 @@
 /*
  * file header(j4fs_header) and data block and media status table(j4fs_mst) size
  */
-#define J4FS_BASIC_UNIT_SIZE			4096
-#define J4FS_BASIC_UNIT_SIZE_BITS		12
+#define J4FS_BASIC_UNIT_SIZE			2048
+#define J4FS_BASIC_UNIT_SIZE_BITS		11
 
 /*
  * File name length
