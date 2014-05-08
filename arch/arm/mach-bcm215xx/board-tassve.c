@@ -1215,8 +1215,8 @@ static struct max8986_audio_pdata audio_pdata = {
 };
 
 static struct max8986_power_pdata power_pdata = {
-	.usb_charging_cc = MAX8986_CHARGING_CURR_450MA,
-	.wac_charging_cc = MAX8986_CHARGING_CURR_450MA,
+	.usb_charging_cc = MAX8986_CHARGING_CURR_600MA,
+	.wac_charging_cc = MAX8986_CHARGING_CURR_800MA,
 	.eoc_current = MAX8986_EOC_100MA,
 
 	.temp_adc_channel =  0,
