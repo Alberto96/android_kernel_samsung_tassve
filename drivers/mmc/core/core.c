@@ -302,10 +302,11 @@ void mmc_set_data_timeout(struct mmc_data *data, const struct mmc_card *card)
 
 		if (data->flags & MMC_DATA_WRITE)
 			/*
-			 * The limit is really 250 ms, but that is
-			 * insufficient for some crappy cards.
+			 * According to SD 3.01 specification
+			 * application note, it is recommended to
+			 * use fixed timeout not less than 500 ms
 			 */
-			limit_us = 300000;
+			limit_us = 500000;
 		else
 			limit_us = 100000;
 
@@ -1371,6 +1372,7 @@ int mmc_suspend_host(struct mmc_host *host)
 }
 
 EXPORT_SYMBOL(mmc_suspend_host);
+
 
 
 /**
