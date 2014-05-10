@@ -1,3 +1,13 @@
+menuconfig BRCM_MODULES
+	tristate "Broadcom Kernel Modules"
+	default N
+	help
+	  Broadcom Kernel Modules
+
+if BRCM_MODULES
+source "drivers/Kconfig.priv"
+endif
+
 menu "Device Drivers"
 
 source "drivers/base/Kconfig"
@@ -116,5 +126,4 @@ source "drivers/staging/Kconfig"
 
 source "drivers/platform/Kconfig"
 
-source "../modules/Kconfig"
 endmenu

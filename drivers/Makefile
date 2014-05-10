@@ -115,3 +115,46 @@ obj-$(CONFIG_VLYNQ)		+= vlynq/
 obj-$(CONFIG_STAGING)		+= staging/
 obj-y				+= platform/
 obj-y				+= ieee802154/
+
+# Broadcom Modules
+obj-$(CONFIG_BMEM) += video/bmem/
+obj-$(CONFIG_HANTRO) += video/hantro/
+obj-$(CONFIG_GE) += video/ge/
+
+obj-$(CONFIG_BRCM_HAL_CAM)  += char/brcm/hal_cam/
+obj-$(CONFIG_VIDEO_CAMACQ)  += char/brcm/camacq/
+obj-$(CONFIG_BRCM_HAL_CAM_WITH_STILL_YUV) += char/brcm/hal_cam/
+
+obj-$(CONFIG_DPRAM) += char/sec/dpram/
+
+obj-$(CONFIG_BRCM_FUSE_IPC_2153SDB) += char/brcm/fuse_ipc/
+obj-$(CONFIG_BRCM_FUSE_IPC_2157SDB) += char/brcm/fuse_ipc/
+obj-$(CONFIG_BRCM_FUSE_RPC_2157SDB) += char/brcm/fuse_rpc/
+obj-$(CONFIG_BRCM_FUSE_RIL_2157SDB) += char/brcm/fuse_ril/
+obj-$(CONFIG_BRCM_FUSE_IPC_CIB) += char/brcm/fuse_ipc/
+obj-$(CONFIG_BRCM_FUSE_RPC_CIB) += char/brcm/fuse_rpc/
+obj-$(CONFIG_BRCM_FUSE_RIL_CIB) += char/brcm/fuse_ril/
+obj-$(CONFIG_BRCM_FUSE_NET) += char/brcm/fuse_net/
+obj-$(CONFIG_BRCM_FUSE_AT) += char/brcm/fuse_at/
+obj-$(CONFIG_BRCM_FUSE_PDP_CIB) += char/brcm/fuse_pdp/
+
+
+obj-$(CONFIG_BRCM_FUSE_RIL_2153SDB) += char/brcm/fuse_rpc/
+
+obj-$(CONFIG_BRCM_FUSE_RIL_2153SDB) += char/brcm/fuse_ril/
+obj-$(CONFIG_BRCM_FUSE_LOG) += char/brcm/fuse_log/
+obj-$(CONFIG_BRCM_FUSE_SYSPARM) += char/brcm/fuse_sysparm/
+obj-$(CONFIG_BRCM_FUSE_VSP) += char/brcm/fuse_vsp/
+obj-$(CONFIG_BRCM_XSCRIPT) += char/brcm/xscript/
+obj-$(CONFIG_BRCM_V3D) += char/brcm/v3d/
+ifeq ($(CONFIG_ARCH_BCM2157), y)
+obj-$(CONFIG_BRCM_SOUND_ALSA) += sound/brcm/alsa/
+endif
+
+ifeq ($(CONFIG_ARCH_BCM215XX), y)
+obj-$(CONFIG_BRCM_SOUND_ATHENA_ALSA) += sound/brcm/alsa_athena/
+endif
+# Headset module
+obj-$(CONFIG_BRCM_HEADSET) += sound/brcm/headset/
+#cntin
+obj-$(CONFIG_BRCM_CNTIN) += gps/brcm/

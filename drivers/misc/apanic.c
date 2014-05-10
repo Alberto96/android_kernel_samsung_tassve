@@ -40,7 +40,7 @@
 
 #ifdef CONFIG_BRCM_KPANIC_UI_IND
 #include <linux/broadcom/lcdc_dispimg.h>
-#include "bcmlog.h"
+#include "../char/brcm/fuse_log/bcmlog.h"
 
 extern int cp_crashed;
 #endif

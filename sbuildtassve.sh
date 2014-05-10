@@ -20,8 +20,6 @@ make -j4 modules
 
 rm ramdisk/modules/*
 
-find ../modules/. -name '*.ko' -exec cp -v {} ramdisk/modules/ \;
-
 find . -name '*.ko' -exec cp -v {} ramdisk/modules/ \;
 
 mv ramdisk/modules/bcm4330.ko ramdisk/modules/dhd.ko
@@ -34,6 +32,12 @@ cp ramdisk/tools/mkbootfs ramdisk/
 cp ramdisk/tools/mkbootimg output/
 
 cd ramdisk
+
+cp modules.tar.gz tassve/lib/modules/
+cd tassve/lib/modules
+tar -zxvf modules.tar.gz
+rm modules.tar.gz
+cd ../../../
 
 chmod 777 mkbootfs
 ./mkbootfs tassve | lzma > ../output/ramdisk.gz
