@@ -26,7 +26,6 @@
 
 #include <asm/mach/map.h>
 #include <mach/hardware.h>
-#include <mach/sec_debug.h>
 
 
 #define __IO_DEV_DESC(x, sz)	{		\
@@ -236,8 +235,4 @@ void __init bcm21553_map_io(void)
 {
 	iotable_init(bcm21553_io_desc, ARRAY_SIZE(bcm21553_io_desc));
 	bcm21553_mm_mem_init();
-
-	/* as soon as INFORM3 is visible, sec_debug is ready to run */
-	sec_debug_init();
-	
 }
