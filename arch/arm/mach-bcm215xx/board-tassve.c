@@ -48,11 +48,13 @@
 #if defined (CONFIG_ANDROID_PMEM)
 #include <linux/android_pmem.h>
 #include <linux/dma-mapping.h>
+
 #if defined (CONFIG_BMEM)
 #define PMEM_ADSP_SIZE (2 * PAGE_SIZE)
 #else
 #define PMEM_ADSP_SIZE (1024 * 1024 * 8)
 #endif
+
 #endif
 
 #ifdef CONFIG_MMC_BCM
@@ -2021,7 +2023,7 @@ static struct android_usb_platform_data android_usb_pdata = {
 	.product_id = 0x0005,
 	.adb_product_id = 0x0002,
 	.version = 0x0100,
-	.product_name = "BCM21553-Thunderbird",
+	.product_name = "GT-S5570i",
 	.manufacturer_name = "Broadcom",
 	.serial_number="0123456789ABCDEF",
 	.nluns = 1,
