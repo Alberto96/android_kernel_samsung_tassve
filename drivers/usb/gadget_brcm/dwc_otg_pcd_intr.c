@@ -63,6 +63,7 @@ extern void dwc_otg_cil_SetEnumStarted(void);
 extern void dwc_otg_cil_SetPostConfigCurrent(void);
 extern void dwc_otg_cil_SetPreConfigCurrent(void);
 extern void handle_resume( dwc_otg_core_if_t *_core_if );
+extern void handle_earlysuspend( dwc_otg_core_if_t *_core_if );
 #ifdef CONFIG_USB_ANDROID
 extern void Android_cancel_reenum(void);
 #endif
@@ -1836,6 +1837,8 @@ static void complete_ep( dwc_otg_pcd_ep_t *_ep )
     }
 }
 
+extern void dwc_otg_in_ep0_disable(void);
+
 /**
  * This function handles EP0 Control transfers.	 
  *
@@ -1846,6 +1849,9 @@ static void handle_ep0( dwc_otg_pcd_t *_pcd )
 {
   dwc_otg_core_if_t *core_if = GET_CORE_IF(_pcd);
   dwc_otg_pcd_ep_t *ep0 = &_pcd->ep0;
+
+ /* Disable IN EP0 if it is still enabled....*/
+ dwc_otg_in_ep0_disable();
 
 #ifdef DEBUG_EP0
   DWC_DEBUGPL(DBG_PCDV, "%s()\n", __func__);
@@ -2650,6 +2656,7 @@ int32_t dwc_otg_pcd_handle_intr( dwc_otg_pcd_t *_pcd )
       if (gintr_status.b.erlysuspend) 
 	{
       DWC_DEBUGPL(DBG_PCDV|DBG_USRV, "erlysuspend\n");
+	  handle_earlysuspend(core_if);
 	  retval |= dwc_otg_pcd_handle_early_suspend_intr( _pcd );
 	}
       if (gintr_status.b.usbreset) 

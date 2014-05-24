@@ -96,27 +96,9 @@ Broadcom's express prior written consent.
 /*-------------------------------------------------------------------------*/
 
 #define DRIVER_NAME		"usb_mass_storage"
+#define VENDOR_NAME		"Vodafone"
+#define PRODUCT_NAME	"Smart II"
 #define MAX_LUNS		8
-/* ++ fsg vendor & product name */
-static const char gVendorName4Kies[16] = "SAMSUNG";
-#if defined(CONFIG_BOARD_TOTORO)
-#if defined(CONFIG_TARGET_LOCALE_SEA_THL)
-static const char gProductName4Kies[16] = "S5360B Card";
-#elif defined(CONFIG_TARGET_LOCALE_EUR_VODA)
-static const char gProductName4Kies[16] = "S5369 Card";
-#elif defined(CONFIG_TARGET_LOCALE_AUS_TEL)
-static const char gProductName4Kies[16] = "S5360T Card";
-#else
-static const char gProductName4Kies[16] = "S5360 Card";
-#endif
-#elif defined(CONFIG_BOARD_LUISA)
-static const char gProductName4Kies[16] = "B5510 Card";
-#elif defined(CONFIG_BOARD_TASSVE)
-static const char gProductName4Kies[16] = "S5570I Card";
-#elif defined(CONFIG_BOARD_COOPERVE)
-static const char gProductName4Kies[16] = "S5830i Card";
-#endif
-/* -- fsg vendor & product name */
 
 static const char shortname[] = DRIVER_NAME;
 
@@ -2940,14 +2922,11 @@ int mass_storage_function_add(struct usb_composite_dev *cdev,
 	init_completion(&fsg->thread_notifier);
 
 	the_fsg->buf_size = BULK_BUFFER_SIZE;
+	the_fsg->vendor = VENDOR_NAME;
+	the_fsg->product = PRODUCT_NAME;
 	the_fsg->sdev.name = DRIVER_NAME;
 	the_fsg->sdev.print_name = print_switch_name;
 	the_fsg->sdev.print_state = print_switch_state;
-
-	/* ++ fsg vendor & product name */
-	the_fsg->vendor = gVendorName4Kies;
-	the_fsg->product = gProductName4Kies;
-	/* -- fsg vendor & product name */
 	rc = switch_dev_register(&the_fsg->sdev);
 	if (rc < 0)
 		goto err_switch_dev_register;

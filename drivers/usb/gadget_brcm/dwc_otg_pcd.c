@@ -572,7 +572,7 @@ static void dwc_otg_pcd_free_buffer(struct usb_ep *_ep, void *_buf,
  */
 static int dwc_otg_pcd_ep_queue(struct usb_ep *_ep, 
 			struct usb_request *_req, gfp_t _gfp_flags)
-{
+{	
 	dwc_otg_pcd_request_t *req;
 	dwc_otg_pcd_ep_t *ep;
 	dwc_otg_pcd_t	*pcd;
@@ -584,7 +584,7 @@ static int dwc_otg_pcd_ep_queue(struct usb_ep *_ep,
 		DWC_WARN("%s, bad params\n", __func__);
 		return -EINVAL;
 	}
-		
+
 	DWC_DEBUGPL(DBG_PCDV,"%s(%p,%p,%d)\n", 
 				__func__, _ep, _req, _gfp_flags);
 
@@ -592,7 +592,8 @@ static int dwc_otg_pcd_ep_queue(struct usb_ep *_ep,
 	if (req == 0) { /* Coverity check */
 		DWC_WARN("%s, bad req\n", __func__);
 		return -EINVAL;
-	}
+	} 
+	
 	ep = container_of(_ep, dwc_otg_pcd_ep_t, ep);
 	
 	if ((!ep->desc && ep->dwc_ep.num != 0)	||!list_empty(&req->queue)) 
@@ -778,7 +779,7 @@ static int dwc_otg_pcd_ep_queue(struct usb_ep *_ep,
 		diepmsk_data_t diepmsk = { .d32 = 0};
 		diepmsk.b.intktxfemp = 1;
 		dwc_modify_reg32( &GET_CORE_IF(pcd)->dev_if->dev_global_regs->diepmsk, 0, diepmsk.d32 );
-	}
+	}	
 		
 	SPIN_UNLOCK_IRQRESTORE(&pcd->lock, flags);
 	return 0;
@@ -885,19 +886,19 @@ static int dwc_otg_pcd_ep_set_halt(struct usb_ep *_ep, int _value)
 	int retval = 0;
 	unsigned long flags;
 	dwc_otg_pcd_ep_t *ep = 0;
-		
+
 	/*Coverity check*/
 	if (!_ep) 
 	{
 		DWC_WARN("%s, bad ep\n", __func__);
 		return -EINVAL;
 	}
-		
+
 	DWC_DEBUGPL(DBG_PCD,"HALT %s %d\n", _ep->name, _value);
 
 	ep = container_of(_ep, dwc_otg_pcd_ep_t, ep);
 
-	if ( (!ep->desc && ep != &ep->pcd->ep0) ) { /*Coverity check*/
+	if ( (!ep->desc && ep != &ep->pcd->ep0)) { /*Coverity check*/
 		DWC_WARN("%s, bad ep\n", __func__);
 		return -EINVAL;
 	}
@@ -1363,6 +1364,7 @@ static int32_t dwc_otg_pcd_autosuspend( void *_p )
         /* Clear interrupt */
         gintsts.d32 = 0;
         gintsts.b.usbsuspend = 1;
+        gintsts.b.erlysuspend= 1;
         dwc_write_reg32( &_core_if->core_global_regs->gintsts, gintsts.d32);
 
 	return 1;
@@ -1868,14 +1870,14 @@ int __init_or_module dwc_otg_pcd_init(struct lm_device *_lmdev)
 		pcd->gadget.is_otg = 1;
 	}
 	  
-    // Add a hack here for testing, need para + config reg to decide, 
-    pcd->gadget.is_otg = 0;
+    	// Add a hack here for testing, need para + config reg to decide, 
+    	pcd->gadget.is_otg = 0;
 
 	pcd->driver = 0;
 	/* Register the gadget device */
 	dev_set_name(&pcd->gadget.dev, "gadget");
     	retval = device_register( &pcd->gadget.dev ); /*Coverity check*/
-
+	
 	/*
 	 * Initialized the Core for Device mode.
 	 */

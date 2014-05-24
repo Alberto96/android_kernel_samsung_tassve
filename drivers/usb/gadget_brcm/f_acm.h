@@ -21,8 +21,6 @@
 int acm_function_add(struct usb_composite_dev *cdev,
 	struct usb_configuration *c);
 void acm_interface_enable(int enable);
-void acm_function_enable(int enable);
-
 void obex_interface_enable(int enable);
 void obex_loopback_interface_enable(int enable);
 

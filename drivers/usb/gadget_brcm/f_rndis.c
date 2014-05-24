@@ -302,7 +302,7 @@ static char manufacturer [50];
 /*-------------------------------------------------------------------------*/
 
 static struct sk_buff *rndis_add_header(struct sk_buff *skb)
-{
+{	
 	skb = skb_realloc_headroom(skb, sizeof(struct rndis_packet_msg_type));
 	if (skb)
 		rndis_add_hdr(skb);
@@ -333,7 +333,7 @@ static void rndis_response_available(void *_rndis)
 
 	status = usb_ep_queue(rndis->notify, req, GFP_ATOMIC);
 
-	if (status) {
+	if (status) {	
 		atomic_dec(&rndis->notify_count);
 		DBG(cdev, "notify/0 --> %d\n", status);
 	}
@@ -373,7 +373,7 @@ static void rndis_response_complete(struct usb_ep *ep, struct usb_request *req)
 		status = usb_ep_queue(rndis->notify, req, GFP_ATOMIC);
 
 		if (status) {
-			atomic_dec(&rndis->notify_count);
+		       atomic_dec(&rndis->notify_count);
 			DBG(cdev, "notify/1 --> %d\n", status);
 	}
 		break;

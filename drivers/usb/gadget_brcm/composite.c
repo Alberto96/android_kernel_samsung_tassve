@@ -42,10 +42,6 @@ Broadcom's express prior written consent.
 
 #include <linux/usb/composite.h>
 
-#if defined(CONFIG_CPU_FREQ_GOV_BCM21553)  
-#include <mach/bcm21553_cpufreq_gov.h>
-#endif
-
 
 /*
  * The code in this file is utility code, used to build a gadget driver
@@ -70,9 +66,9 @@ enum {
 
 static struct usb_composite_driver *composite;
 static struct usb_configuration	*c_android, *c_rndis, *c_acm, *c_current;
-#if defined(CONFIG_CPU_FREQ_GOV_BCM21553)  
-static struct cpufreq_client_desc *usb_client;
-#endif
+
+/* External functions */
+extern void android_usb_enum_unlock(void);
 
 /* Some systems will need runtime overrides for the  product identifers
  * published in the device descriptor, either numbers or strings or both.
@@ -181,18 +177,18 @@ void usb_composite_force_reset(struct usb_composite_dev *cdev)
 	unsigned long			flags;
 
 	if (cdev) { /*Coverity check*/
-	spin_lock_irqsave(&cdev->lock, flags);
-	/* force reenumeration */
+		spin_lock_irqsave(&cdev->lock, flags);
+		/* force reenumeration */
 		if (cdev->gadget && cdev->gadget->speed != USB_SPEED_UNKNOWN) {
-		spin_unlock_irqrestore(&cdev->lock, flags);
+			spin_unlock_irqrestore(&cdev->lock, flags);
 
-		usb_gadget_disconnect(cdev->gadget);
-		msleep(10);
-		usb_gadget_connect(cdev->gadget);
-	} else {
-		spin_unlock_irqrestore(&cdev->lock, flags);
-	}
-}
+			usb_gadget_disconnect(cdev->gadget);
+			msleep(10);
+			usb_gadget_connect(cdev->gadget);
+		} else {
+			spin_unlock_irqrestore(&cdev->lock, flags);
+		}
+	}	
 }
 
 /**
@@ -620,7 +616,7 @@ done:
 	usb_gadget_vbus_draw(gadget, power);
 	if (result >= 0 && cdev->delayed_status)
 		result = USB_GADGET_DELAYED_STATUS;
-
+	 
     if (!cdev->connected)
         cdev->connected = 1;
                      
@@ -969,6 +965,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 		spin_lock_irqsave(&cdev->lock, flags);
 		value = set_config(cdev, ctrl, w_value);
 		spin_unlock_irqrestore(&cdev->lock, flags);
+		android_usb_enum_unlock();
 		break;
 	case USB_REQ_GET_CONFIGURATION:	
 		pr_info("USB_REQ_GET_CONFIGURATION\n");
@@ -1070,13 +1067,13 @@ unknown:
 		 */
 		if (value < 0) {
 			struct usb_configuration        *cfg = 0; /* coverity check */
-
+			
 			if (cfg) { /*Coverity check*/
-			list_for_each_entry(cfg, &cdev->configs, list) {
+				list_for_each_entry(cfg, &cdev->configs, list) {
 					if (cfg->setup)
-				value = cfg->setup(cfg, ctrl);
-			}
-		}
+						value = cfg->setup(cfg, ctrl);
+				}
+			}			
 		}
 
 		/* USB MSC BOT Reset */
@@ -1247,15 +1244,6 @@ composite_switch_work(struct work_struct *data)
        if (cdev->connected != cdev->sw_connected.state) {
                connected = cdev->connected;
                spin_unlock_irqrestore(&cdev->lock, flags);
-
-#if defined(CONFIG_CPU_FREQ_GOV_BCM21553)  
-		if(connected){
-			cpufreq_bcm_dvfs_disable(usb_client);
-		}
-		else{
-			cpufreq_bcm_dvfs_enable(usb_client);
-		}
-#endif
                switch_set_state(&cdev->sw_connected, connected);
        } else {
                spin_unlock_irqrestore(&cdev->lock, flags);
@@ -1466,9 +1454,7 @@ int usb_composite_register(struct usb_composite_driver *driver)
 	composite = driver;
 
 	INIT_DELAYED_WORK(&g_delay_workq_set_current, rndis_change_charging_current);
-#if defined(CONFIG_CPU_FREQ_GOV_BCM21553)  
-	usb_client = cpufreq_bcm_client_get("usb_client");
-#endif
+
 	driver->class = class_create(THIS_MODULE, "usb_composite");
 	if (IS_ERR(driver->class))
 		return PTR_ERR(driver->class);

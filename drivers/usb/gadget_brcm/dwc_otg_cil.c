@@ -108,6 +108,7 @@ Broadcom's express prior written consent.
 #define ANACR9_USB_PLL_POWER_ON		       0x00000010 //If this bit is 0 then it turns PLL power down
 #define ANACR9_USB_UTMI_SOFT_RESET_DISABLE       0x00000020 //If this bit is 0 then it enables UTMI soft reset
 #define ANACR9_USB_UTMI_STOP_DIGITAL_CLOCKS       0x00000040 //If this bit is 0 then port comes out of reset in power down
+#define ANACR9_USB_NON_DRVING			0x00000080 //If this bit is 0 then USB host is connected
 #define ANACR9_USB_RESERVED_CLK_DURING_SUSP	0x40000000
 #define ANACR9_USB_IDLE_ENABLE	              0x00008000 //If 1 HSOTG PHY goes to sleep mode 
 #define ANACR9_PLL_SUSPEND_ENABLE		0x00000100 //0: USB suspend; 1: Normal mode
@@ -342,15 +343,15 @@ void dwc_otg_cil_SetPostConfigCurrent(void)
 			break;
 		case PMU_MUIC_CHGTYP_USB:
 			pr_info("PMU_MUIC_CHGTYP_USB\n");
-			pmu_set_charging_current(MAX8986_CHARGING_CURR_450MA);
+			pmu_set_charging_current(MAX8986_CHARGING_CURR_500MA);
 			break;
 		case PMU_MUIC_CHGTYP_DOWNSTREAM_PORT:
 			pr_info("PMU_MUIC_CHGTYP_DOWNSTREAM_PORT\n");
-			pmu_set_charging_current(MAX8986_CHARGING_CURR_450MA);
+			pmu_set_charging_current(MAX8986_CHARGING_CURR_900MA);
 			break;
 		case PMU_MUIC_CHGTYP_DEDICATED_CHGR:
 			pr_info("PMU_MUIC_CHGTYP_DEDICATED_CHGR\n");
-			pmu_set_charging_current(MAX8986_CHARGING_CURR_450MA);
+			pmu_set_charging_current(MAX8986_CHARGING_CURR_MAX);
 			break;
 		case PMU_MUIC_CHGTYP_SPL_500MA:
 			pr_info("PMU_MUIC_CHGTYP_SPL_500MA -- error \n");			
@@ -408,8 +409,7 @@ void dwc_otg_cil_SetPreConfigCurrent(void)
 	pr_info("dwc_otg_cil_SetPreConfigCurrent\n");
 
 #if defined(CONFIG_MFD_MAX8986)
-	if(bc11_charger_type!=PMU_MUIC_CHGTYP_DEDICATED_CHGR &&bc11_charger_type!=PMU_MUIC_CHGTYP_DOWNSTREAM_PORT )
-	pmu_set_charging_current(MAX8986_CHARGING_CURR_90MA);
+	pmu_set_charging_current(MAX8986_CHARGING_CURR_90MA); // Change the charging current back to 90mA for Bug#234191 [Alvin 2012.03.16]
 #else
 	pmu_set_usb_enum_current(true);
 #endif
@@ -466,19 +466,15 @@ int dwc_otg_cil_GetPostConfigCurrentIn2maUnit(void)
 **********************************************************************/
 void dwc_otg_cil_Start( dwc_otg_core_if_t *_core_if)
 {
-	dctl_data_t dctl = {.d32=0};
-	gahbcfg_data_t ahbcfg = { .d32 = 0};
-	gusbcfg_data_t usbcfg = { .d32 = 0 };
-	dctl.b.sftdiscon = 1;
 	pr_info("dwc_otg_cli_start\n");
 	dwc_otg_core_init(_core_if);
 	 if (_core_if->pcd_cb && _core_if->pcd_cb->start ) {
 	       _core_if->pcd_cb->start( _core_if->pcd_cb->p );
-	}
+	}	
 	dwc_otg_enable_global_interrupts(_core_if);
-	msleep(100);
-	dwc_modify_reg32( &_core_if->dev_if->dev_global_regs->dctl, dctl.d32, 0 );	
-	
+
+	/* Disable the non-driving bit after USB core and stack are ready. */
+	REG_SYS_ANACR9 &= ~ANACR9_USB_NON_DRVING;
 }
 
 //*********************************************************************
@@ -492,12 +488,8 @@ void dwc_otg_cil_Start( dwc_otg_core_if_t *_core_if)
 **********************************************************************/
 void dwc_otg_cil_Stop( dwc_otg_core_if_t *_core_if)
 {
-	dctl_data_t dctl = {.d32=0};
-	
 	pr_info("dwc_otg_cli_stop\n");
-	dctl.b.sftdiscon = 1;	
 	dwc_otg_disable_global_interrupts(_core_if);
-	dwc_modify_reg32( &_core_if->dev_if->dev_global_regs->dctl, 0 ,dctl.d32);
 	 if (_core_if->pcd_cb && _core_if->pcd_cb->stop ) {
 	       _core_if->pcd_cb->stop( _core_if->pcd_cb->p );
 	}
@@ -598,17 +590,17 @@ dwc_otg_core_if_t *dwc_otg_cil_init(const uint32_t *_reg_base_addr,
   uint8_t *reg_base = (uint8_t *)_reg_base_addr;
   int i = 0;
 
-	DWC_DEBUGPL(DBG_CILV, "%s(%p,%p)\n", __func__, _reg_base_addr, _core_params);
+  DWC_DEBUGPL(DBG_CILV, "%s(%p,%p)\n", __func__, _reg_base_addr, _core_params);
 
    /*Coverity check*/
   core_if = kmalloc( sizeof(dwc_otg_core_if_t), GFP_KERNEL);
-	
+  
   if (core_if == 0) 
     {
       DWC_DEBUGPL(DBG_CIL, "Allocation of dwc_otg_core_if_t failed\n");
       return 0;
     }
-	
+
    spin_lock_init( &core_if->lock );
 	
   memset(core_if, 0, sizeof(dwc_otg_core_if_t));
@@ -3014,6 +3006,25 @@ void dwc_otg_ep_start_transfer(dwc_otg_core_if_t *_core_if, dwc_ep_t *_ep)
     }
 }
 
+/**
+ * This function is to check IN EP0 enable bit, if enable bit is set, set disable bit to disable IN EP0.
+*
+*/
+void dwc_otg_in_ep0_disable(void)
+{
+	dwc_otg_core_if_t *_core_if = g_core_if;
+	depctl_data_t depctl;	
+	 dwc_otg_dev_in_ep_regs_t *in_regs = 
+		_core_if->dev_if->in_ep_regs[0];
+	 
+	depctl.d32 = dwc_read_reg32(&in_regs->diepctl);	
+	
+	if (depctl.b.epena  == 1) {
+		pr_info("dwc_otg_in_ep0_disable:epena:depctl=[%08x]....\n", depctl.d32);
+		depctl.b.epdis = 1;
+		dwc_write_reg32(&in_regs->diepctl, depctl.d32);
+	}	
+ }
 
 /**
  * This function does the setup for a data transfer for EP0 and starts
