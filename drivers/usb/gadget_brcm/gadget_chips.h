@@ -267,7 +267,7 @@ static inline int usb_gadget_controller_number(struct usb_gadget *gadget)
         else if (gadget_is_bcm1160(gadget))
                 return 0x26;
         else if (gadget_is_dwc(gadget))
-                return 0x27;
+                return 0x00;
 #ifdef CONFIG_USB_GADGET_BCM28XX_UDC2
 	else if (gadget_is_bcm28xx_2(gadget))
 		return 0x16;

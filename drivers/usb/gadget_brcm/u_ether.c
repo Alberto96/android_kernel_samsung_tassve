@@ -85,7 +85,7 @@ struct eth_dev {
 	struct sk_buff		*(*wrap)(struct sk_buff *skb);
 	int			(*unwrap)(struct sk_buff *skb);
 
-	struct work_struct	work;  
+	struct work_struct	work;
 
 	struct workqueue_struct *rx_workqueue;
 	
@@ -224,11 +224,11 @@ static void defer_kevent(struct eth_dev *dev, int flag)
 	} 
 	else
 	{	
-		if (!schedule_work(&dev->work))
-			ERROR(dev, "kevent %d may have been dropped\n", flag);
-		else
-			DBG(dev, "kevent %d scheduled\n", flag);
-	}
+	if (!schedule_work(&dev->work))
+		ERROR(dev, "kevent %d may have been dropped\n", flag);
+	else
+		DBG(dev, "kevent %d scheduled\n", flag);
+}
 }
 
 static void rx_complete(struct usb_ep *ep, struct usb_request *req);
@@ -440,7 +440,7 @@ static void rx_fill(struct eth_dev *dev, gfp_t gfp_flags)
 {
 	struct usb_request	*req;
 	unsigned long		flags;
-	
+
 	/* fill unused rxq slots with some skb */
 	spin_lock_irqsave(&dev->req_rx_lock, flags);
 	while (!list_empty(&dev->rx_reqs)) {
@@ -649,7 +649,7 @@ drop:
 			list_add(&req->list, &dev->tx_reqs);
 			netif_start_queue(net);
 			}  else
-			list_add(&req->list, &dev->tx_reqs);
+		list_add(&req->list, &dev->tx_reqs);
 			
 		spin_unlock_irqrestore(&dev->req_lock, flags);
 	}
@@ -881,9 +881,10 @@ int __init gether_setup(struct usb_gadget *g, u8 ethaddr[ETH_ALEN])
 		dev_dbg(&g->dev, "register_netdev failed, %d\n", status);
 		free_netdev(net);
 	} else {
+#if 0	// log delete	
 		INFO(dev, "MAC %pM\n", net->dev_addr);
 		INFO(dev, "HOST MAC %pM\n", dev->host_mac);
-
+#endif
 		the_dev = dev;
 	}
 

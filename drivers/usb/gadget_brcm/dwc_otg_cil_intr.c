@@ -62,9 +62,6 @@ Broadcom's express prior written consent.
 #define RESUME_CURRENT	0
 
 static struct workqueue_struct *my_wq;
-#ifdef CONFIG_USB_ANDROID
-extern void Android_cancel_reenum(void);
-#endif
 
 typedef struct {
   struct work_struct my_work;
@@ -644,11 +641,7 @@ int32_t dwc_otg_handle_usb_suspend_intr(dwc_otg_core_if_t *_core_if )
             // generated from inside the usb sub system, and not related to power management of total system.
             if (_core_if->pcd_cb && _core_if->pcd_cb->auto_suspend ) {
                 _core_if->pcd_cb->auto_suspend( _core_if);
-				/* Clear interrupt */
-				gintsts.d32 = 0;
-				gintsts.b.erlysuspend = 1;
-				dwc_write_reg32( &_core_if->core_global_regs->gintsts, gintsts.d32);
-            }	
+            }		
         } else {
                 if (_core_if->op_state == A_PERIPHERAL) {
                         DWC_DEBUGPL(DBG_ANY,"a_peripheral->a_host\n");
@@ -657,24 +650,14 @@ int32_t dwc_otg_handle_usb_suspend_intr(dwc_otg_core_if_t *_core_if )
                         hcd_start( _core_if );
                         _core_if->op_state = A_HOST;
                 }                
+            /* Clear interrupt */
+            gintsts.d32 = 0;
+            gintsts.b.usbsuspend = 1;
+            dwc_write_reg32( &_core_if->core_global_regs->gintsts, gintsts.d32);
         }
-		/* Clear interrupt */
-		gintsts.d32 = 0;
-		gintsts.b.usbsuspend = 1;
-		dwc_write_reg32( &_core_if->core_global_regs->gintsts, gintsts.d32);
-#ifdef CONFIG_USB_ANDROID
-		Android_cancel_reenum();
-#endif 
         return 1;
 }
 
-/*
-   This function must be called in the USB early suspend interrupt.
-*/
-void handle_earlysuspend (dwc_otg_core_if_t *_core_if)
-{
-	dwc_otg_handle_usb_suspend_intr(_core_if);
-}
 
 /**
  * This function returns the Core Interrupt register.

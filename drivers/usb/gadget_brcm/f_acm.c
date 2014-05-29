@@ -236,6 +236,17 @@ static struct usb_descriptor_header *acm_hs_function[] = {
 	NULL,
 };
 
+/* used when acm function is disabled */
+static struct usb_descriptor_header *null_acm_descs[] = {
+	NULL,
+};
+
+static struct f_acm	*acm;
+
+static struct usb_descriptor_header **fs_acm_desc_h, **hs_acm_desc_h;
+static struct usb_endpoint_descriptor *fs_acm_endp_desc_in, *fs_acm_endp_desc_out,*fs_acm_endp_desc_notify,
+								*hs_acm_endp_desc_in, *hs_acm_endp_desc_out,*hs_acm_endp_desc_notify;
+
 /* string descriptors: */
 
 #define ACM_CTRL_IDX	0
@@ -327,12 +338,12 @@ static void acm_complete_set_line_coding(struct usb_ep *ep,
 				acm->port_num, req->status);
 		return;
 	}
-	/* normal completion */  
- 	if (req->actual != sizeof(acm->port_line_coding)) {   
- 		pr_info("acm ttyGS%d short resp, len %d\n",   
- 				acm->port_num, req->actual);   
- 		//usb_ep_set_halt(ep);   
- 	} else { 	
+	/* normal completion */
+	if (req->actual != sizeof(acm->port_line_coding)) {
+		pr_info("acm ttyGS%d short resp, len %d\n",
+				acm->port_num, req->actual);
+		//usb_ep_set_halt(ep);
+	} else {
 		struct usb_cdc_line_coding	*value = req->buf;
 		pr_info("acm_complete_set_line_coding:line_coding=%x\n", *value);
 		/* REVISIT:  we currently just remember this data.
@@ -424,7 +435,7 @@ invalid:
 			acm->port_num, ctrl->bRequestType, ctrl->bRequest,
 			w_value, w_index, w_length);		
 		req->zero = (value < w_length);
-		req->length = value;		
+		req->length = value;
 		req->dma = 0;
 		value = usb_ep_queue(cdev->gadget->ep0, req, GFP_ATOMIC);
 		if (value < 0)
@@ -461,7 +472,7 @@ static int acm_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 			pr_info("reset acm ttyGS%d\n", acm->port_num);
 			if(acm_cb->stop)
 				acm_cb->stop();
-			gserial_disconnect(&acm->port);			
+			gserial_disconnect(&acm->port);
 		} else {
 			pr_info("activate acm ttyGS%d\n", acm->port_num);
 		}
@@ -469,7 +480,7 @@ static int acm_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 				acm->hs.in, acm->fs.in);
 		acm->port.out_desc = ep_choose(cdev->gadget,
 				acm->hs.out, acm->fs.out);
-		gserial_connect(&acm->port, acm->port_num);	
+		gserial_connect(&acm->port, acm->port_num);		
 		if(acm_cb->start)
 			acm_cb->start();
 
@@ -679,15 +690,20 @@ acm_bind(struct usb_configuration *c, struct usb_function *f)
 
 	/* copy descriptors, and track endpoint copies */
 	f->descriptors = usb_copy_descriptors(acm_fs_function);
+	fs_acm_desc_h = f->descriptors;
 	if (!f->descriptors)
 		goto fail;
 
 	acm->fs.in = usb_find_endpoint(acm_fs_function,
 			f->descriptors, &acm_fs_in_desc);
+	fs_acm_endp_desc_in = acm->fs.in;
+	
 	acm->fs.out = usb_find_endpoint(acm_fs_function,
 			f->descriptors, &acm_fs_out_desc);
+	fs_acm_endp_desc_out = acm->fs.out;
 	acm->fs.notify = usb_find_endpoint(acm_fs_function,
 			f->descriptors, &acm_fs_notify_desc);
+	fs_acm_endp_desc_notify = acm->fs.notify;
 
 	/* support all relevant hardware speeds... we expect that when
 	 * hardware is dual speed, all bulk-capable endpoints work at
@@ -703,13 +719,19 @@ acm_bind(struct usb_configuration *c, struct usb_function *f)
 
 		/* copy descriptors, and track endpoint copies */
 		f->hs_descriptors = usb_copy_descriptors(acm_hs_function);
+		hs_acm_desc_h = f->hs_descriptors;
 
 		acm->hs.in = usb_find_endpoint(acm_hs_function,
 				f->hs_descriptors, &acm_hs_in_desc);
+		hs_acm_endp_desc_in = acm->hs.in;
+		
 		acm->hs.out = usb_find_endpoint(acm_hs_function,
 				f->hs_descriptors, &acm_hs_out_desc);
+		hs_acm_endp_desc_out = acm->hs.out;
+		
 		acm->hs.notify = usb_find_endpoint(acm_hs_function,
 				f->hs_descriptors, &acm_hs_notify_desc);
+		hs_acm_endp_desc_notify=acm->hs.notify;
 	}
 
 	pr_info("acm ttyGS%d: %s speed IN/%s OUT/%s NOTIFY/%s\n",
@@ -763,7 +785,7 @@ static inline bool can_support_cdc(struct usb_configuration *c)
 	return true;
 }
 
-static struct f_acm	*acm;
+
 /**
  * acm_bind_config - add a CDC ACM function to a configuration
  * @c: the configuration to support the CDC ACM instance
@@ -851,6 +873,44 @@ void acm_interface_enable(int enable)
 			acm_disable(&acm->port.func);
 	}
 	pr_info("acm_interface_enable---\n");
+}
+
+
+
+
+void acm_function_enable(int enable)
+{
+	struct f_acm *acm_dev = acm;
+	
+	if(acm_dev){
+		pr_err("acm_function_enable=%d +++\n",enable);
+		if(enable){
+			acm_dev->port.func.descriptors = fs_acm_desc_h;
+			acm_dev->fs.in = fs_acm_endp_desc_in;
+			acm_dev->fs.out = fs_acm_endp_desc_out;
+			acm_dev->fs.notify = fs_acm_endp_desc_notify;
+			if(gadget_is_dualspeed(acm_dev->port.func.config->cdev->gadget)){
+				acm_dev->port.func.hs_descriptors = hs_acm_desc_h;
+				acm_dev->hs.in = hs_acm_endp_desc_in;
+				acm_dev->hs.out = hs_acm_endp_desc_out;
+				acm_dev->hs.notify = hs_acm_endp_desc_notify;
+			}
+		}
+		else{
+			acm_dev->port.func.descriptors = null_acm_descs;
+			acm_dev->port.func.hs_descriptors = null_acm_descs;
+			acm_dev->hs.in = NULL;
+			acm_dev->hs.out = NULL;
+			acm_dev->hs.notify = NULL;
+			acm_dev->fs.in = NULL;
+			acm_dev->fs.out = NULL;
+			acm_dev->fs.notify = NULL;
+		}
+	}
+	else{
+		pr_info("ERROR:acm = NULL!!!\n");
+	}
+	pr_err("acm_function_enable---\n");
 }
 
 #ifdef CONFIG_USB_ANDROID_ACM
