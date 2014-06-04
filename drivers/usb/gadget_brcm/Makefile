@@ -44,7 +44,7 @@ g_printer-objs			:= printer.o usbstring.o config.o \
 					epautoconf.o
 g_cdc-objs			:= cdc2.o u_ether.o f_ecm.o \
 					u_serial.o f_acm.o $(C_UTILS)
-g_android-objs		:= android.o f_adb.o f_mass_storage.o \
+g_android-objs		:= android.o brcm_switch.o f_adb.o f_mass_storage.o \
 				u_serial.o f_acm.o f_obex.o u_ether.o $(C_UTILS)
 
 ifeq ($(CONFIG_USB_ETH_RNDIS),y)
@@ -61,6 +61,4 @@ obj-$(CONFIG_USB_G_PRINTER)	+= g_printer.o
 obj-$(CONFIG_USB_MIDI_GADGET)	+= g_midi.o
 obj-$(CONFIG_USB_CDC_COMPOSITE) += g_cdc.o
 obj-$(CONFIG_USB_ANDROID)	+= g_android.o
-obj-m += brcm_test_drv.o
-obj-m += brcm_switch.o
 

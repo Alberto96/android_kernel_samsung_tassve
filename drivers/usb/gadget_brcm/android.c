@@ -158,10 +158,10 @@ static unsigned char cur_adb_mode = 0;
 /* String Table */
 static struct usb_string strings_dev[] = {
 	/* These dummy values should be overridden by platform data */
-	[STRING_MANUFACTURER_IDX].s = "SAMSUNG",
-	[STRING_PRODUCT_IDX].s = "Samsung Android Phone",
-	[STRING_SERIAL_IDX].s = "BRCM2153",
-	{}
+	[STRING_MANUFACTURER_IDX].s = "Android",
+	[STRING_PRODUCT_IDX].s = "Android",
+	[STRING_SERIAL_IDX].s = "0123456789ABCDEF",
+	{  }			/* end of list */
 };
 
 static struct usb_gadget_strings stringtab_dev = {
