@@ -13,4 +13,4 @@
 
 #EXTRA_CFLAGS += -DMEMALLOC_LINUX_ALLOC_DMA=1
 
-obj-$(CONFIG_HANTRO)	:= memalloc.o
+#obj-$(CONFIG_HANTRO)	:= memalloc.o
